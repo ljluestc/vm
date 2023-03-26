@@ -1,0 +1,39 @@
+# Replace VMware-specific drivers with generic or standard drivers
+
+# Define an array of VMware-specific device driver service names
+$VMwareDrivers = @(
+    "VMware Accelerated AMD PCNet Adapter",
+    "VMware Pointing Device",
+    "VMware SVGA 3D",
+    "vm3dmp",
+    "vmci",
+    "vmdebug",
+    "vmmouse",
+    "vmrawdsk",
+    "vmusbmouse",
+    "vmware_AAAA",
+    "vmx86"
+)
+
+# Define an array of generic or standard driver INF files
+$GenericDrivers = @(
+    "%SystemRoot%\inf\input.inf", # Standard keyboard and mouse driver
+    "%SystemRoot%\inf\monitor.inf", # Standard monitor driver
+    "%SystemRoot%\inf\netrasa.inf", # WAN Miniport driver
+    "%SystemRoot%\inf\msmouse.inf" # Standard mouse driver
+)
+
+# Loop through each VMware-specific device driver
+foreach ($VMwareDriver in $VMwareDrivers) {
+    # Get the service name and current driver information for the device
+    $ServiceName = Get-WmiObject -Class Win32_Service -Filter "Name='$VMwareDriver'" | Select-Object -ExpandProperty Name
+    $CurrentDriver = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$ServiceName" -Name "ImagePath" | Select-Object -ExpandProperty ImagePath
+
+    # If the current driver is a VMware-specific driver, replace it with a generic driver
+    if ($CurrentDriver -match "VMware") {
+        foreach ($GenericDriver in $GenericDrivers) {
+            pnputil.exe /add-driver $GenericDriver /install
+        }
+        Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$ServiceName" -Name "Start" | Set-ItemProperty -Name "Start" -Value 4
+    }
+}
