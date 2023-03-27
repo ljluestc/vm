@@ -27,7 +27,7 @@ $GenericDrivers = @(
 foreach ($VMwareDriver in $VMwareDrivers) {
     # Get the service name and current driver information for the device
     $ServiceName = Get-WmiObject -Class Win32_Service -Filter "Name='$VMwareDriver'" | Select-Object -ExpandProperty Name
-    $CurrentDriver = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$ServiceName" -Name "ImagePath" | Select-Object -ExpandProperty ImagePath
+    $CurrentDriver = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$ServiceName" -Name "ImagePath" -ErrorAction SilentlyContinue).ImagePath
 
     # If the current driver is a VMware-specific driver, replace it with a generic driver
     if ($CurrentDriver -match "VMware") {
